@@ -6,7 +6,7 @@
 
 Term: Spring 2020
 
-+ Team ## 3
++ Team # 3
 + Team members
 	+ Du, Jinxiao (Presenter)
 	+ Duong, Tram
