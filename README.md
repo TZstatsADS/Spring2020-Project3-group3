@@ -6,13 +6,13 @@
 
 Term: Spring 2020
 
-+ Team ##
++ Team ## 3
 + Team members
-	+ team member 1
-	+ team member 2
-	+ team member 3
-	+ team member 4
-	+ team member 5
+	+ Du, Jinxiao (Presenter)
+	+ Duong, Tram
+	+ Liu, Ziyun
+	+ Lu, Ran
+	+ Su, Colleen
 
 + Project summary: In this project, we created a classification engine for facial emotion recognition. 
 	
