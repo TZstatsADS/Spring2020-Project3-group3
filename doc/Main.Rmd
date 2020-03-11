@@ -1,6 +1,6 @@
 ---
 title: "Main"
-author: "Chengliang Tang, Yujie Wang, Tian Zheng"
+author: "Ran (Rena) Lu"
 output:
   html_document:
     df_print: paged
@@ -11,8 +11,8 @@ This file is currently a template for running evaluation experiments. You should
 
 ```{r message=FALSE}
 if(!require("EBImage")){
-  source("https://bioconductor.org/biocLite.R")
-  biocLite("EBImage")
+  install.packages("BiocManager")
+  BiocManager::install("EBImage")
 }
 if(!require("R.matlab")){
   install.packages("R.matlab")
@@ -47,7 +47,7 @@ library(caret)
 ### Step 0 set work directories
 ```{r wkdir, eval=FALSE}
 set.seed(0)
-setwd("~/Project3-FacialEmotionRecognition/doc")
+setwd("~/Documents/Columbia/GR5243/Spring2020-Project3-ads-spring2020-project3-group3/doc")
 # here replace it with your own path or manually set it in RStudio to where this rmd file is located. 
 # use relative path for reproducibility
 ```
@@ -78,11 +78,11 @@ run.feature.train=TRUE # process features for training set
 run.test=TRUE # run evaluation on an independent test set
 run.feature.test=TRUE # process features for test set
 ```
-Using cross-validation or independent test set evaluation, we compare the performance of models with different specifications. In this Starter Code, we tune parameter k (number of neighbours) for KNN.
+Using cross-validation, we compare the performance of models with different specifications. In this Code, we tune parameter k (number of stumps) for Boosted Decision Machine.
 
 ```{r model_setup}
-k = c(5,11,21,31,41,51)
-model_labels = paste("KNN with K =", k)
+k = c(50,100,150,200,250,300)
+model_labels = paste("Boosted Decision Machine with number of trees K =", k)
 ```
 
 ### Step 2: import data and train-test split 
@@ -97,12 +97,12 @@ test_idx <- setdiff(info$Index,train_idx)
 
 If you choose to extract features from images, such as using Gabor filter, R memory will exhaust all images are read together. The solution is to repeat reading a smaller batch(e.g 100) and process them. 
 ```{r}
-n_files <- length(list.files(train_image_dir))
-
-image_list <- list()
-for(i in 1:100){
-   image_list[[i]] <- readImage(paste0(train_image_dir, sprintf("%04d", i), ".jpg"))
-}
+# n_files <- length(list.files(train_image_dir))
+# 
+# image_list <- list()
+# for(i in 1:100){
+#    image_list[[i]] <- readImage(paste0(train_image_dir, sprintf("%04d", i), ".jpg"))
+# }
 ```
 
 Fiducial points are stored in matlab format. In this step, we read them and store them in a list.
@@ -110,6 +110,8 @@ Fiducial points are stored in matlab format. In this step, we read them and stor
 #function to read fiducial points
 #input: index
 #output: matrix of fiducial points corresponding to the index
+n_files <- length(list.files(train_image_dir))
+
 readMat.matrix <- function(index){
      return(round(readMat(paste0(train_pt_dir, sprintf("%04d", index), ".mat"))[[1]],0))
 }
@@ -168,14 +170,14 @@ Call the train model and test model from library.
 + In this Starter Code, we use KNN to do classification. 
 
 ```{r loadlib}
-#source("../lib/train.R") Since knn does not need to train, I comment this line.
-source("../lib/test_knn.R")
+source("../lib/train_gbm.R")
+source("../lib/test_gbm.R")
 ```
 
 #### Model selection with cross-validation
 * Do model selection by choosing among different values of training model parameters.
 ```{r runcv, eval=F}
-source("../lib/cross_validation_knn.R")
+source("../lib/cross_validation.R")
 if(run.cv){
   err_cv <- matrix(0, nrow = length(k), ncol = 2)
   for(i in 1:length(k)){
@@ -199,7 +201,6 @@ if(run.cv){
     geom_crossbar() +
     theme(axis.text.x = element_text(angle = 90, hjust = 1))
 }
-
 ```
 
 
@@ -209,13 +210,14 @@ if(run.cv){
   model_best <- k[which.min(err_cv[,1])]
 }
 par_best <- list(k = model_best)
+# k best model = 200
 ```
 
 * Train the model with the entire training set using the selected model (model parameter) via cross-validation.
 ```{r final_train}
-#tm_train=NA
-#tm_train <- system.time(fit_train <- train(dat_train, par_best))
-#save(fit_train, file="../output/fit_train.RData")
+tm_train=NA
+tm_train <- system.time(fit_train <- train(dat_train, par_best))
+save(fit_train, file="../output/fit_train.RData")
 ```
 
 ### Step 5: Run test on test images
@@ -223,7 +225,7 @@ par_best <- list(k = model_best)
 tm_test=NA
 if(run.test){
   load(file="../output/fit_train.RData")
-  tm_test <- system.time(pred <- test(model_best, dat_test))
+  tm_test <- system.time(pred <- test(fit_train, dat_test))
 }
 ```
 
@@ -231,7 +233,7 @@ if(run.test){
 ```{r}
 accu <- mean(dat_test$emotion_idx == pred)
 cat("The accuracy of model:", model_labels[which.min(err_cv[,1])], "is", accu*100, "%.\n")
-
+pred <- factor(pred)
 library(caret)
 confusionMatrix(pred, dat_test$emotion_idx)
 ```

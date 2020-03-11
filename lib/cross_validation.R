@@ -2,10 +2,9 @@
 ### Cross Validation ###
 ########################
 
-### Author: Chengliang Tang
 ### Project 3
 
-cv.function <- function(dat_train, K, gamma, cost){
+cv.function <- function(dat_train, K, k){
   ### Input:
   ### - train data frame
   ### - K: a number stands for K-fold CV
@@ -21,14 +20,14 @@ cv.function <- function(dat_train, K, gamma, cost){
     train.data <- dat_train[s != i,]
     test.data <- dat_train[s == i,]
   
-    par <- list(gamma = gamma, cost = cost)
+    par <- list(k = k)
     fit <- train(train.data, par)
     
     pred <- test(fit, test.data)  
-    error <- mean(pred != test.data$categoryID) 
-    print(error)
+    error <- mean(pred != test.data$emotion_idx) 
     cv.error[i] <- error
     
   }			
   return(c(mean(cv.error),sd(cv.error)))
+  
 }
