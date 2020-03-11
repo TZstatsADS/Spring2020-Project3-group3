@@ -207,6 +207,8 @@ if(run.cv){
 * Choose the "best" parameter value
 ```{r best_model}
 if(run.cv){
+  # load("../output/err_cv.RData")
+  # err_cv <- as.data.frame(err_cv) to save the time, can uncomment this two line to directly import the data
   model_best <- k[which.min(err_cv[,1])]
 }
 par_best <- list(k = model_best)
