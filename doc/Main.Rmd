@@ -5,10 +5,10 @@ output:
   html_document:
     df_print: paged
 ---
-In your final repo, there should be an R markdown file that organizes **all computational steps** for evaluating your proposed Facial Expression Recognition framework. 
-
-This file is currently a template for running evaluation experiments. You should update it according to your codes but following precisely the same structure. 
-
+In your final repo, there should be an R markdown file that organizes **all computational steps** for evaluating your proposed Facial Expression Recognition framework.  
+  
+This file is currently a template for running evaluation experiments. You should update it according to your codes but following precisely the same structure.  
+  
 ```{r message=FALSE}
 if(!require("EBImage")){
   install.packages("BiocManager")
@@ -43,34 +43,35 @@ library(EBImage)
 library(ggplot2)
 library(caret)
 ```
-
-### Step 0 set work directories
+  
+### Step 0 set work directories  
 ```{r wkdir, eval=FALSE}
 set.seed(0)
 setwd("~/Documents/Columbia/GR5243/Spring2020-Project3-ads-spring2020-project3-group3/doc")
 # here replace it with your own path or manually set it in RStudio to where this rmd file is located. 
 # use relative path for reproducibility
 ```
-
-Provide directories for training images. Training images and Training fiducial points will be in different subfolders. 
+  
+Provide directories for training images. Training images and Training fiducial points will be in different subfolders.  
 ```{r}
 train_dir <- "../data/train_set/" # This will be modified for different data sets.
 train_image_dir <- paste(train_dir, "images/", sep="")
 train_pt_dir <- paste(train_dir,  "points/", sep="")
 train_label_path <- paste(train_dir, "label.csv", sep="") 
 ```
+  
 
-
-### Step 1: set up controls for evaluation experiments.
-
-In this chunk, we have a set of controls for the evaluation experiments. 
-
-+ (T/F) cross-validation on the training set
-+ (number) K, the number of CV folds
-+ (T/F) process features for training set
-+ (T/F) run evaluation on an independent test set
-+ (T/F) process features for test set
-
+## Part 1: Baseline Model  
+### Step 1: set up controls for evaluation experiments.  
+  
+In this chunk, we have a set of controls for the evaluation experiments.  
+  
++ (T/F) cross-validation on the training set  
++ (number) K, the number of CV folds  
++ (T/F) process features for training set  
++ (T/F) run evaluation on an independent test set  
++ (T/F) process features for test set  
+  
 ```{r exp_setup}
 run.cv=TRUE # run cross-validation on the training set
 K <- 5  # number of CV folds
@@ -78,24 +79,25 @@ run.feature.train=TRUE # process features for training set
 run.test=TRUE # run evaluation on an independent test set
 run.feature.test=TRUE # process features for test set
 ```
-Using cross-validation, we compare the performance of models with different specifications. In this Code, we tune parameter k (number of stumps) for Boosted Decision Machine.
-
+Using cross-validation, we compare the performance of models with different specifications. In this Code, we tune parameter k (number of stumps) for Boosted Decision Machine.  
+  
 ```{r model_setup}
 k = c(50,100,150,200,250,300)
 model_labels = paste("Boosted Decision Machine with number of trees K =", k)
 ```
-
-### Step 2: import data and train-test split 
+  
+### Step 2: import data and train-test split  
 ```{r}
 #train-test split
 info <- read.csv(train_label_path)
 n <- nrow(info)
 n_train <- round(n*(4/5), 0)
+set.seed(0)
 train_idx <- sample(info$Index, n_train, replace = F)
 test_idx <- setdiff(info$Index,train_idx)
 ```
-
-If you choose to extract features from images, such as using Gabor filter, R memory will exhaust all images are read together. The solution is to repeat reading a smaller batch(e.g 100) and process them. 
+  
+If you choose to extract features from images, such as using Gabor filter, R memory will exhaust all images are read together. The solution is to repeat reading a smaller batch(e.g 100) and process them.  
 ```{r}
 # n_files <- length(list.files(train_image_dir))
 # 
@@ -104,8 +106,8 @@ If you choose to extract features from images, such as using Gabor filter, R mem
 #    image_list[[i]] <- readImage(paste0(train_image_dir, sprintf("%04d", i), ".jpg"))
 # }
 ```
-
-Fiducial points are stored in matlab format. In this step, we read them and store them in a list.
+  
+Fiducial points are stored in matlab format. In this step, we read them and store them in a list.  
 ```{r read fiducial points}
 #function to read fiducial points
 #input: index
@@ -120,24 +122,23 @@ readMat.matrix <- function(index){
 fiducial_pt_list <- lapply(1:n_files, readMat.matrix)
 save(fiducial_pt_list, file="../output/fiducial_pt_list.RData")
 ```
-
-### Step 3: construct features and responses
-
-+ The follow plots show how pairwise distance between fiducial points can work as feature for facial emotion recognition.
-
-  + In the first column, 78 fiducials points of each emotion are marked in order. 
-  + In the second column distributions of vertical distance between right pupil(1) and  right brow peak(21) are shown in  histograms. For example, the distance of an angry face tends to be shorter than that of a surprised face.
-  + The third column is the distributions of vertical distances between right mouth corner(50)
-and the midpoint of the upper lip(52).  For example, the distance of an happy face tends to be shorter than that of a sad face.
-
-![Figure1](../figs/feature_visualization.jpg)
-
-`feature.R` should be the wrapper for all your feature engineering functions and options. The function `feature( )` should have options that correspond to different scenarios for your project and produces an R object that contains features and responses that are required by all the models you are going to evaluate later. 
   
-  + `feature.R`
-  + Input: list of images or fiducial point
-  + Output: an RData file that contains extracted features and corresponding responses
-
+### Step 3: construct features and responses  
+  
++ The follow plots show how pairwise distance between fiducial points can work as feature for facial emotion recognition.  
+  
+  + In the first column, 78 fiducials points of each emotion are marked in order.  
+  + In the second column distributions of vertical distance between right pupil(1) and  right brow peak(21) are shown in  histograms. For example, the distance of an angry face tends to be shorter than that of a surprised face.  
+  + The third column is the distributions of vertical distances between right mouth corner(50) and the midpoint of the upper lip(52). For example, the distance of an happy face tends to be shorter than that of a sad face.  
+  
+![Figure1](../figs/feature_visualization.jpg)  
+  
+`feature.R` should be the wrapper for all your feature engineering functions and options. The function `feature( )` should have options that correspond to different scenarios for your project and produces an R object that contains features and responses that are required by all the models you are going to evaluate later.  
+  
+  + `feature.R`  
+  + Input: list of images or fiducial point  
+  + Output: an RData file that contains extracted features and corresponding responses  
+  
 ```{r feature}
 source("../lib/feature.R")
 tm_feature_train <- NA
@@ -154,41 +155,41 @@ save(dat_train, file="../output/feature_train.RData")
 save(dat_test, file="../output/feature_test.RData")
 ```
 
-### Step 4: Train a classification model with training features and responses
-Call the train model and test model from library. 
-
-`train.R` and `test.R` should be wrappers for all your model training steps and your classification/prediction steps. 
-
-+ `train.R`
-  + Input: a data frame containing features and labels and a parameter list.
-  + Output:a trained model
-+ `test.R`
-  + Input: the fitted classification model using training data and processed features from testing images 
-  + Input: an R object that contains a trained classifier.
-  + Output: training model specification
-
-+ In this Starter Code, we use KNN to do classification. 
-
+### Step 4: Train a classification model with training features and responses  
+Call the train model and test model from library.  
+  
+`train.R` and `test.R` should be wrappers for all your model training steps and your classification/prediction steps.  
+  
++ `train.R`  
+  + Input: a data frame containing features and labels and a parameter list.  
+  + Output:a trained model  
++ `test.R`  
+  + Input: the fitted classification model using training data and processed features from testing images  
+  + Input: an R object that contains a trained classifier.  
+  + Output: training model specification  
+  
++ In this Starter Code, we use KNN to do classification.  
+  
 ```{r loadlib}
 source("../lib/train_gbm.R")
 source("../lib/test_gbm.R")
 ```
-
-#### Model selection with cross-validation
-* Do model selection by choosing among different values of training model parameters.
+  
+#### Model selection with cross-validation  
+* Do model selection by choosing among different values of training model parameters.  
 ```{r runcv, eval=F}
-source("../lib/cross_validation.R")
-if(run.cv){
-  err_cv <- matrix(0, nrow = length(k), ncol = 2)
-  for(i in 1:length(k)){
-    cat("k=", k[i], "\n")
-    err_cv[i,] <- cv.function(dat_train, K, k[i])
-  save(err_cv, file="../output/err_cv.RData")
-  }
-}
+# source("../lib/cross_validation.R")
+# if(run.cv){
+#   err_cv <- matrix(0, nrow = length(k), ncol = 2)
+#   for(i in 1:length(k)){
+#     cat("k=", k[i], "\n")
+#     err_cv[i,] <- cv.function(dat_train, K, k[i])
+#   save(err_cv, file="../output/err_cv.RData")
+#   }
+# }
 ```
-
-Visualize cross-validation results. 
+  
+Visualize cross-validation results.  
 ```{r cv_vis}
 if(run.cv){
   load("../output/err_cv.RData")
@@ -202,9 +203,9 @@ if(run.cv){
     theme(axis.text.x = element_text(angle = 90, hjust = 1))
 }
 ```
-
-
-* Choose the "best" parameter value
+  
+  
+* Choose the "best" parameter value  
 ```{r best_model}
 if(run.cv){
   # load("../output/err_cv.RData")
@@ -214,15 +215,15 @@ if(run.cv){
 par_best <- list(k = model_best)
 # k best model = 200
 ```
-
-* Train the model with the entire training set using the selected model (model parameter) via cross-validation.
+  
+* Train the model with the entire training set using the selected model (model parameter) via cross-validation.  
 ```{r final_train}
 tm_train=NA
 tm_train <- system.time(fit_train <- train(dat_train, par_best))
 save(fit_train, file="../output/fit_train.RData")
 ```
-
-### Step 5: Run test on test images
+  
+### Step 5: Run test on test images  
 ```{r test}
 tm_test=NA
 if(run.test){
@@ -230,8 +231,8 @@ if(run.test){
   tm_test <- system.time(pred <- test(fit_train, dat_test))
 }
 ```
-
-* evaluation
+  
+* evaluation  
 ```{r}
 accu <- mean(dat_test$emotion_idx == pred)
 cat("The accuracy of model:", model_labels[which.min(err_cv[,1])], "is", accu*100, "%.\n")
@@ -240,16 +241,169 @@ library(caret)
 confusionMatrix(pred, dat_test$emotion_idx)
 ```
 
-Note that the accuracy is not high but is better than that of ramdom guess(4.5%). 
-
-### Summarize Running Time
-Prediction performance matters, so does the running times for constructing features and for training the model, especially when the computation resource is limited. 
+Note that the accuracy is not high but is better than that of ramdom guess(4.5%).  
+  
+### Summarize Running Time  
+Prediction performance matters, so does the running times for constructing features and for training the model, especially when the computation resource is limited.  
 ```{r running_time}
-cat("Time for constructing training features=", tm_feature_train[1], "s \n")
-cat("Time for constructing testing features=", tm_feature_test[1], "s \n")
-#cat("Time for training model=", tm_train[1], "s \n")
-cat("Time for testing model=", tm_test[1], "s \n")
+cat("Time for constructing training baseline model features=", tm_feature_train[1], "s \n")
+cat("Time for constructing testing baseline model features=", tm_feature_test[1], "s \n")
+cat("Time for training baseline model=", tm_train[1], "s \n")
+cat("Time for testing baseline model=", tm_test[1], "s \n")
+```
+  
+## Part 2: Improved Model  
+  
+### Step 1: set up controls for evaluation experiments.  
+  
+In this chunk, we have a set of controls for the evaluation experiments.  
+  
++ (T/F) cross-validation on the training set  
++ (number) K, the number of CV folds  
++ (T/F) process features for training set  
++ (T/F) run evaluation on an independent test set  
++ (T/F) process features for test set  
+  
+```{r exp_setup}
+run.cv=TRUE # run cross-validation on the training set
+K <- 5  # number of CV folds
+run.feature.train=TRUE # process features for training set
+run.test=TRUE # run evaluation on an independent test set
+run.feature.test=TRUE # process features for test set
+```
+Using cross-validation, we compare the performance of models with different specifications. In this Code, we tune parameter k (number of stumps) for Boosted Decision Machine.  
+  
+```{r model_setup}
+l = c(50,100,150,200,250,300) # change the labels
+model_labels_improved = paste("Boosted Decision Machine with number of trees K =", l)  # change the labels
 ```
 
-###Reference
-- Du, S., Tao, Y., & Martinez, A. M. (2014). Compound facial expressions of emotion. Proceedings of the National Academy of Sciences, 111(15), E1454-E1462.
+### Step 2: import data and train-test split  
+  
+Same as Baseline model  
+  
+### Step 3: construct features and responses  
+
+Feature extraction is the same as Baseline model, and &&& method is used for feature selection.  
+  
+`feature_improved.R` should be the wrapper for all your feature engineering functions and options. The function `feature( )` should have options that correspond to different scenarios for your project and produces an R object that contains features and responses that are required by all the models you are going to evaluate later.  
+  
+  + `feature_improved.R`  
+  + Input: list of images or fiducial point  
+  + Output: an RData file that contains extracted features and corresponding responses  
+  
+```{r feature}
+source("../lib/feature_improved.R") # change file name
+tm_feature_train_improved <- NA
+if(run.feature.train){
+  tm_feature_train_improved <- system.time(dat_train_improved <- feature(fiducial_pt_list, train_idx))
+}
+
+tm_feature_test_improved <- NA
+if(run.feature.test){
+  tm_feature_test_improved <- system.time(dat_test_improved <- feature(fiducial_pt_list, test_idx))
+}
+
+save(dat_train_improved, file="../output/feature_train_improved.RData")
+save(dat_test_improved, file="../output/feature_test_improved.RData")
+```
+  
+### Step 4: Train a classification model with training features and responses  
+Call the train model and test model from library.  
+  
+`train_improved.R` and `test_improved.R` should be wrappers for all your model training steps and your classification/prediction steps.  
+  
++ `train_improved.R`  
+  + Input: a data frame containing features and labels and a parameter list.  
+  + Output:a trained model  
++ `test_improved.R`  
+  + Input: the fitted classification model using training data and processed features from testing images  
+  + Input: an R object that contains a trained classifier.  
+  + Output: training model specification  
+  
++ In this Starter Code, we use KNN to do classification.  
+  
+```{r loadlib}
+source("../lib/train_improved.R") # change file name
+source("../lib/test_improved.R") # change file name
+```
+  
+#### Model selection with cross-validation  
+* Do model selection by choosing among different values of training model parameters.  
+```{r runcv, eval=F}
+source("../lib/cross_validation_improved.R") # change file name
+if(run.cv){
+  err_cv_improved <- matrix(0, nrow = length(l), ncol = 2)
+  for(i in 1:length(l)){
+    cat("l=", l[i], "\n")
+    err_cv_improved[i,] <- cv.function_improved(dat_train_improved, K, l[i])
+  save(err_cv_improved, file="../output/err_cv_improved.RData")
+  }
+}
+```
+  
+Visualize cross-validation results.  
+```{r cv_vis}
+if(run.cv){
+  load("../output/err_cv_improved.RData")
+  err_cv_improved <- as.data.frame(err_cv_improved) 
+  colnames(err_cv_improved) <- c("mean_error", "sd_error")
+  err_cv_improved$l = as.factor(l)
+  err_cv_improved %>%
+    ggplot(aes(x = l, y = mean_error,
+               ymin = mean_error - sd_error, ymax = mean_error + sd_error)) + 
+    geom_crossbar() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1))
+}
+```  
+  
+* Choose the "best" parameter value  
+```{r best_model}
+if(run.cv){
+  # load("../output/err_cv_improved.RData")
+  # err_cv_improved <- as.data.frame(err_cv_improved) to save the time, can uncomment this two line to directly import the data
+  model_best_improved <- l[which.min(err_cv_improved[,1])]
+}
+par_best_improved <- list(l = model_best_improved)
+
+```
+  
+* Train the model with the entire training set using the selected model (model parameter) via cross-validation.  
+```{r final_train}
+tm_train_improved=NA
+tm_train_improved <- system.time(fit_train_improved <- train_improved(dat_train_improved, par_best_improved))
+save(fit_train_improved, file="../output/fit_train_improved.RData")
+```
+  
+### Step 5: Run test on test images  
+```{r test}
+tm_test_improved=NA
+if(run.test){
+  load(file="../output/fit_train_improved.RData")
+  tm_test_improved <- system.time(pred_improved <- test_improved(fit_train_improved, dat_test_improved))
+}
+```
+  
+* evaluation  
+```{r}
+accu_improved <- mean(dat_test_improved$emotion_idx == pred_improved)
+cat("The accuracy of model:", model_labels_improved[which.min(err_cv_improved[,1])], "is", accu_improved*100, "%.\n")
+pred_improved <- factor(pred_improved)
+library(caret)
+confusionMatrix(pred_improved, dat_test_improved$emotion_idx)
+```
+  
+Note that the accuracy is not high but is better than that of ramdom guess(4.5%).  
+  
+### Summarize Running Time  
+Prediction performance matters, so does the running times for constructing features and for training the model, especially when the computation resource is limited.  
+```{r running_time}
+cat("Time for constructing training improved model features=", tm_feature_train_improved[1], "s \n")
+cat("Time for constructing testing improved model features=", tm_feature_test_improved[1], "s \n")
+cat("Time for training improved model=", tm_train_improved[1], "s \n")
+cat("Time for testing improved model=", tm_test_improved[1], "s \n")
+```
+  
+###Reference  
+- Du, S., Tao, Y., & Martinez, A. M. (2014). Compound facial expressions of emotion. Proceedings of the National Academy of Sciences, 111(15), E1454-E1462.  
+  
