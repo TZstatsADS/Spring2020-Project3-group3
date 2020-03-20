@@ -1,0 +1,247 @@
+---
+title: "Main"
+author: "Tram D"
+date: "3/14/2020"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r message=FALSE}
+if(!require("EBImage")){
+  install.packages("BiocManager")
+  BiocManager::install("EBImage")
+}
+if(!require("R.matlab")){
+  install.packages("R.matlab")
+}
+if(!require("readxl")){
+  install.packages("readxl")
+}
+
+if(!require("dplyr")){
+  install.packages("dplyr")
+}
+if(!require("readxl")){
+  install.packages("readxl")
+}
+
+if(!require("ggplot2")){
+  install.packages("ggplot2")
+}
+
+if(!require("caret")){
+  install.packages("caret")
+}
+if(!require("randomForest")){
+  install.packages("randomForest")
+}
+if(!require("LncFinder")){
+  install.packages("LncFinder")
+}
+library(R.matlab)
+library(readxl)
+library(dplyr)
+library(EBImage)
+library(ggplot2)
+library(caret)
+library(MASS)
+library(tidyverse)
+library(randomForest)
+library(LncFinder)
+```
+
+### Step 0 set work directories
+```{r wkdir, eval=FALSE}
+set.seed(0)
+setwd("C:/Users/tramh/Documents/GitHub/Spring2020-Project3-ads-spring2020-project3-group3/tram/doc")
+```
+
+Provide directories for training images. Training images and Training fiducial points will be in different subfolders. 
+```{r}
+train_dir <- "../data/train_set/"
+train_image_dir <- paste(train_dir, "images/", sep="")
+train_pt_dir <- paste(train_dir,  "points/", sep="")
+train_label_path <- paste(train_dir, "label.csv", sep="") 
+```
+
+
+### Step 1: set up controls for evaluation experiments.
+
+
+```{r exp_setup}
+run.cv=TRUE # run cross-validation on the training set
+K <- 5  # number of CV folds
+run.feature.train=TRUE # process features for training set
+run.test=TRUE # run evaluation on an independent test set
+run.feature.test=TRUE # process features for test set
+```
+
+```{r model_setup}
+k = c(50,100,150,200,250,300)
+model_labels = paste("Boosted Decision Machine with number of trees K =", k)
+```
+
+### Step 2: import data and train-test split 
+```{r}
+#train-test split
+info <- read.csv(train_label_path)
+n <- nrow(info)
+n_train <- round(n*(4/5), 0)
+train_idx <- sample(info$Index, n_train, replace = F)
+test_idx <- setdiff(info$Index,train_idx)
+```
+
+
+```{r read fiducial points}
+#function to read fiducial points
+#input: index
+#output: matrix of fiducial points corresponding to the index
+n_files <- length(list.files(train_image_dir))
+
+readMat.matrix <- function(index){
+     return(round(readMat(paste0(train_pt_dir, sprintf("%04d", index), ".mat"))[[1]],0))
+}
+
+#load fiducial points
+fiducial_pt_list <- lapply(1:n_files, readMat.matrix)
+save(fiducial_pt_list, file="../output/fiducial_pt_list.RData")
+```
+
+### Step 3: construct features and responses
+
+
+![Figure1](../figs/feature_visualization.jpg)
+
+```{r feature}
+source("../lib/feature.R")
+tm_feature_train <- NA
+if(run.feature.train){
+  tm_feature_train <- system.time(dat_train <- feature(fiducial_pt_list, train_idx))
+}
+
+tm_feature_test <- NA
+if(run.feature.test){
+  tm_feature_test <- system.time(dat_test <- feature(fiducial_pt_list, test_idx))
+}
+
+save(dat_train, file="../output/feature_train.RData")
+save(dat_test, file="../output/feature_test.RData")
+```
+
+### Step 4: Train a classification model with training features and responses
+
+```{r loadlib}
+source("../lib/train_svm.R")
+source("../lib/test_svm.R")
+source("../lib/cross_validation_svm.R")
+```
+
+``` {r svm run.cv, eval=FALSE}
+#SVM Cross-validation
+cost=seq(0.01, 0.1, length=10)
+err_svm <- matrix(0, nrow = length(cost), ncol = 2)
+for(i in 1:length(cost)){
+    cat("cost=", cost[i], "\n")
+    err_svm[i,] <- svm_cv(dat_train, K=5, cost[i])
+    save(err_svm, file="../output/err_svm.RData")
+  }
+
+```
+
+```{r svm cv vis}
+#Load visualization of cross validation results of svm
+load("../output/err_svm.RData")
+err_svm <- as.data.frame(err_svm) 
+colnames(err_svm) <- c("mean_error", "sd_error")
+cost=seq(0.001, 0.01, length=10)
+err_svm$cost = as.factor(cost)
+err_svm %>% 
+  ggplot(aes(x = cost, y = mean_error,
+             ymin = mean_error - sd_error, ymax = mean_error + sd_error)) + 
+    geom_crossbar() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+
+```{r svm best_model}
+cost_best_svm <- cost[which.min(err_svm[,1])]
+par_best_svm <- list(cost=cost_best_svm) 
+# Training
+tm_train_svm=NA
+tm_train_svm <- system.time(fit_train_svm <- svm_train(dat_train, par_best_svm, probability = TRUE))
+#Save and load model
+saveRDS(fit_train_svm, "../output/fit_train_svm.RDS")
+fit_train_svm<-readRDS("../output/fit_train_svm.RDS")
+# Testing 
+tm_test_svm=NA
+tm_test_svm <- system.time(pred <- svm_test(fit_train_svm, dat_test))
+# Evaluation
+accu_svm <- mean(dat_test$emotion_idx == pred)
+confusionMatrix(pred, dat_test$emotion_idx)
+cat("The accuracy of model: cost =", cost[which.min(err_svm[,1])], "is", accu_svm*100, "%.\n")
+```
+
+
+```{r loadlib}
+source("../lib/train_rf.R")
+source("../lib/test_rf.R")
+source("../lib/cross_validation_rf.R")
+```
+#### Model selection with cross-validation
+
+```{r runcv, eval=F}
+para = c(250,500,750,1000,1250)
+model_rf = paste("Random Forest with number of trees =", para)
+if(run.cv){
+  err_rf <- matrix(0, nrow = length(para), ncol = 2)
+  for(i in 1:length(para)){
+    cat("Number of trees=", para[i], "\n")
+    err_rf[i,] <- cv.function(dat_train, K, para[i])
+  save(err_rf, file="../output/err_rf.RData")
+  }
+}
+```
+
+Visualize cross-validation results. 
+```{r cv_vis}
+if(run.cv){
+  load("../output/err_rf.RData")
+  err_rf <- as.data.frame(err_rf) 
+  colnames(err_rf) <- c("mean_error", "sd_error")
+  err_rf$para = as.factor(para)
+  err_rf %>% 
+    ggplot(aes(x = para, y = mean_error,
+               ymin = mean_error - sd_error, ymax = mean_error + sd_error)) + 
+    geom_crossbar() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1))
+}
+```
+
+```{r best_model}
+
+if(run.cv){
+  model_best <- para[which.min(err_rf[,1])]
+}
+par_best <- model_best
+save(model_best,file = "../output/model_best_rf.Rdata")
+
+##Training
+tm_train=NA
+tm_train <- system.time(fit_train_rf <- train_rf(dat_train, par_best))
+save(fit_train_rf, file="../output/fit_train_rf.RData")
+```
+
+```{r test}
+##Testing
+tm_test=NA
+if(run.test){
+  load(file="../output/fit_train_rf.RData")
+  tm_test <- system.time(pred <- predict(fit_train_rf,dat_test))
+}
+##evaluation
+accu_rf <- mean(dat_test$emotion_idx == pred)
+cat("The accuracy of model:", model_rf[which.min(err_rf[,1])], "is", accu_rf*100, "%.\n")
+```
+
+
