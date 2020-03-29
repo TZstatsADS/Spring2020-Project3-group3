@@ -12,11 +12,21 @@ Term: Spring 2020
 	+ Duong, Tram
 	+ Liu, Ziyun
 	+ Lu, Ran
-	+ Su, Colleen
+	+ Su, Kexin(Colleen)
 
-+ Project summary: In this project, we created a classification engine for facial emotion recognition. 
++ **Project summary**: 
+In this project, we created a classification engine for facial emotion recognition.
+We developed advanced classification models to compare their accuracy and efficiency to the client's original baseline model -- Boosted Decision Stumps(gbm), which has a model accuracy of 44.4\%. The advanced model we tried are KNN, Support Vector Machine(SVM), CNN, and Random Forest. Among the 4 advanced models, SVM has the highest accuracy, which is around 52.8\%, so we chose SVM as our final advanced model.  We also conducted PCA for our feature selection.
 	
-**Contribution statement**: ([default](doc/a_note_on_contributions.md)) All team members contributed equally in all stages of this project. All team members approve our work presented in this GitHub repository including this contributions statement. 
++**Contribution statement**:  All team members contributed equally in all stages of this project. 
+
+	+ Jinxiao Du wrote out the code for CNN model in Python, and converted it into R.
+	+ Tram  Duong wrote the code for SVM and Random Forest.
+	+ Ziyun Liu and Kexin Su collaboratively wrote the code for KNN, and Ziyun also conducted feature selection for advanced model using PCA.
+	+ Ran Lu wrote the code for the complete baseline model.
+	+ Kexin Su worked on the code for KNN with Ziyun Liu, merged all the models into the main R markdown file, wrote the code for the label_prediction.csv, and write up the README file.
+	
+All team members approve our work presented in this GitHub repository including this contributions statement. 
 
 Following [suggestions](http://nicercode.github.io/blog/2013-04-05-projects/) by [RICH FITZJOHN](http://nicercode.github.io/about/#Team) (@richfitz). This folder is orgarnized as follows.
 

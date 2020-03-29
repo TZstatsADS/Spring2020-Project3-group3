@@ -297,7 +297,7 @@ Same as Baseline model
   
 ### Step 3: construct features and responses  
 
-Feature extraction is the same as Baseline model, and &&& method is used for feature selection.  
+Feature extraction is the same as Baseline model, and PCA is used for feature selection.  
   
 `feature_improved.R` should be the wrapper for all your feature engineering functions and options. The function `feature( )` should have options that correspond to different scenarios for your project and produces an R object that contains features and responses that are required by all the models you are going to evaluate later.  
   
