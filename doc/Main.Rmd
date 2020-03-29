@@ -35,13 +35,22 @@ if(!require("ggplot2")){
 if(!require("caret")){
   install.packages("caret")
 }
-
+if(!require("randomForest")){
+  install.packages("randomForest")
+}
+if(!require("LncFinder")){
+  install.packages("LncFinder")
+}
 library(R.matlab)
 library(readxl)
 library(dplyr)
 library(EBImage)
 library(ggplot2)
 library(caret)
+library(MASS)
+library(tidyverse)
+library(randomForest)
+library(LncFinder)
 ```
   
 ### Step 0 set work directories  
@@ -309,99 +318,64 @@ save(dat_test_improved, file="../output/feature_test_improved.RData")
 ```
   
 ### Step 4: Train a classification model with training features and responses  
-Call the train model and test model from library.  
-  
-`train_improved.R` and `test_improved.R` should be wrappers for all your model training steps and your classification/prediction steps.  
-  
-+ `train_improved.R`  
-  + Input: a data frame containing features and labels and a parameter list.  
-  + Output:a trained model  
-+ `test_improved.R`  
-  + Input: the fitted classification model using training data and processed features from testing images  
-  + Input: an R object that contains a trained classifier.  
-  + Output: training model specification  
-  
-+ In this Starter Code, we use KNN to do classification.  
-  
 ```{r loadlib}
-source("../lib/train_improved.R") # change file name
-source("../lib/test_improved.R") # change file name
+source("../lib/train_svm.R")
+source("../lib/test_svm.R")
+source("../lib/cross_validation_svm.R")
 ```
-  
-#### Model selection with cross-validation  
-* Do model selection by choosing among different values of training model parameters.  
-```{r runcv, eval=F}
-source("../lib/cross_validation_improved.R") # change file name
-if(run.cv){
-  err_cv_improved <- matrix(0, nrow = length(l), ncol = 2)
-  for(i in 1:length(l)){
-    cat("l=", l[i], "\n")
-    err_cv_improved[i,] <- cv.function_improved(dat_train_improved, K, l[i])
-  save(err_cv_improved, file="../output/err_cv_improved.RData")
+
+``` {r svm run.cv, eval=FALSE}
+#SVM Cross-validation
+cost=seq(0.01, 0.1, length=10)
+err_svm <- matrix(0, nrow = length(cost), ncol = 2)
+for(i in 1:length(cost)){
+    cat("cost=", cost[i], "\n")
+    err_svm[i,] <- svm_cv(dat_train, K=5, cost[i])
+    save(err_svm, file="../output/err_svm.RData")
   }
-}
-```
-  
-Visualize cross-validation results.  
-```{r cv_vis}
-if(run.cv){
-  load("../output/err_cv_improved.RData")
-  err_cv_improved <- as.data.frame(err_cv_improved) 
-  colnames(err_cv_improved) <- c("mean_error", "sd_error")
-  err_cv_improved$l = as.factor(l)
-  err_cv_improved %>%
-    ggplot(aes(x = l, y = mean_error,
-               ymin = mean_error - sd_error, ymax = mean_error + sd_error)) + 
-    geom_crossbar() +
-    theme(axis.text.x = element_text(angle = 90, hjust = 1))
-}
-```  
-  
-* Choose the "best" parameter value  
-```{r best_model}
-if(run.cv){
-  # load("../output/err_cv_improved.RData")
-  # err_cv_improved <- as.data.frame(err_cv_improved) to save the time, can uncomment this two line to directly import the data
-  model_best_improved <- l[which.min(err_cv_improved[,1])]
-}
-par_best_improved <- list(l = model_best_improved)
 
 ```
-  
-* Train the model with the entire training set using the selected model (model parameter) via cross-validation.  
-```{r final_train}
-tm_train_improved=NA
-tm_train_improved <- system.time(fit_train_improved <- train_improved(dat_train_improved, par_best_improved))
-save(fit_train_improved, file="../output/fit_train_improved.RData")
+
+```{r svm cv vis}
+#Load visualization of cross validation results of svm
+load("../output/err_svm.RData")
+err_svm <- as.data.frame(err_svm) 
+colnames(err_svm) <- c("mean_error", "sd_error")
+cost=seq(0.001, 0.01, length=10)
+err_svm$cost = as.factor(cost)
+err_svm %>% 
+  ggplot(aes(x = cost, y = mean_error,
+             ymin = mean_error - sd_error, ymax = mean_error + sd_error)) + 
+    geom_crossbar() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1))
 ```
-  
-### Step 5: Run test on test images  
-```{r test}
-tm_test_improved=NA
-if(run.test){
-  load(file="../output/fit_train_improved.RData")
-  tm_test_improved <- system.time(pred_improved <- test_improved(fit_train_improved, dat_test_improved))
-}
+
+
+```{r svm best_model}
+cost_best_svm <- cost[which.min(err_svm[,1])]
+par_best_svm <- list(cost=cost_best_svm) 
+# Training
+tm_train_svm=NA
+tm_train_svm <- system.time(fit_train_svm <- svm_train(dat_train, par_best_svm, probability = TRUE))
+#Save and load model
+saveRDS(fit_train_svm, "../output/fit_train_svm.RDS")
+fit_train_svm<-readRDS("../output/fit_train_svm.RDS")
+# Testing 
+tm_test_svm=NA
+tm_test_svm <- system.time(pred <- svm_test(fit_train_svm, dat_test))
+# Evaluation
+accu_svm <- mean(dat_test$emotion_idx == pred)
+confusionMatrix(pred, dat_test$emotion_idx)
+cat("The accuracy of model: cost =", cost[which.min(err_svm[,1])], "is", accu_svm*100, "%.\n")
 ```
-  
-* evaluation  
-```{r}
-accu_improved <- mean(dat_test_improved$emotion_idx == pred_improved)
-cat("The accuracy of model:", model_labels_improved[which.min(err_cv_improved[,1])], "is", accu_improved*100, "%.\n")
-pred_improved <- factor(pred_improved)
-library(caret)
-confusionMatrix(pred_improved, dat_test_improved$emotion_idx)
-```
-  
-Note that the accuracy is not high but is better than that of ramdom guess(4.5%).  
   
 ### Summarize Running Time  
 Prediction performance matters, so does the running times for constructing features and for training the model, especially when the computation resource is limited.  
 ```{r running_time}
 cat("Time for constructing training improved model features=", tm_feature_train_improved[1], "s \n")
 cat("Time for constructing testing improved model features=", tm_feature_test_improved[1], "s \n")
-cat("Time for training improved model=", tm_train_improved[1], "s \n")
-cat("Time for testing improved model=", tm_test_improved[1], "s \n")
+cat("Time for training improved model=", tm_train_svm[1], "s \n")
+cat("Time for testing improved model=", tm_test_svm[1], "s \n")
 ```
   
 ###Reference  
