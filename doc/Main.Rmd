@@ -296,25 +296,27 @@ model_labels_improved = paste("Boosted Decision Machine with number of trees K =
 Same as Baseline model  
   
 ### Step 3: construct features and responses  
-
 Feature extraction is the same as Baseline model, and PCA is used for feature selection.  
   
 `feature_improved.R` should be the wrapper for all your feature engineering functions and options. The function `feature( )` should have options that correspond to different scenarios for your project and produces an R object that contains features and responses that are required by all the models you are going to evaluate later.  
-  
   + `feature_improved.R`  
-  + Input: list of images or fiducial point  
+  + Input: train/test data  
   + Output: an RData file that contains extracted features and corresponding responses  
   
 ```{r feature}
 source("../lib/feature_improved.R") # change file name
+
+dat_test_improved <- dat_test[,-ncol(dat_test)]
+dat_train_improved <- dat_train[,-ncol(dat_train)]
+
 tm_feature_train_improved <- NA
 if(run.feature.train){
-  tm_feature_train_improved <- system.time(dat_train_improved <- feature(fiducial_pt_list, train_idx))
+  tm_feature_train_improved <- system.time(dat_train_improved <- feature_improved(dat_train_improved))
 }
 
 tm_feature_test_improved <- NA
 if(run.feature.test){
-  tm_feature_test_improved <- system.time(dat_test_improved <- feature(fiducial_pt_list, test_idx))
+  tm_feature_test_improved <- system.time(dat_test_improved <- feature_improved(dat_test_improved))
 }
 
 save(dat_train_improved, file="../output/feature_train_improved.RData")
