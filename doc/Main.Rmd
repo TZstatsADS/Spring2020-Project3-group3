@@ -41,6 +41,9 @@ if(!require("randomForest")){
 if(!require("LncFinder")){
   install.packages("LncFinder")
 }
+if(!require("gbm")){
+  install.packages("gbm")
+}
 library(R.matlab)
 library(readxl)
 library(dplyr)
@@ -51,6 +54,7 @@ library(MASS)
 library(tidyverse)
 library(randomForest)
 library(LncFinder)
+library(gbm)
 ```
   
 ### Step 0 set work directories  
@@ -359,13 +363,16 @@ tm_train_svm=NA
 tm_train_svm <- system.time(fit_train_svm <- svm_train(dat_train, par_best_svm, probability = TRUE))
 #Save and load model
 saveRDS(fit_train_svm, "../output/fit_train_svm.RDS")
+```
+
+```{r}
 fit_train_svm<-readRDS("../output/fit_train_svm.RDS")
 # Testing 
 tm_test_svm=NA
 tm_test_svm <- system.time(pred_svm <- svm_test(fit_train_svm, dat_test))
 # Evaluation
-accu_svm <- mean(dat_test$emotion_idx == pred)
-confusionMatrix(pred, dat_test$emotion_idx)
+accu_svm <- mean(dat_test$emotion_idx == pred_svm)
+confusionMatrix(pred_svm, dat_test$emotion_idx)
 cat("The accuracy of model: cost =", cost[which.min(err_svm[,1])], "is", accu_svm*100, "%.\n")
 ```
   
@@ -379,7 +386,8 @@ cat("Time for testing improved model=", tm_test_svm[1], "s \n")
 ```
 
 ```{r}
-data.frame(index=1:500,Baseline=pred_gbm,Advanced=pred_svm)
+labels_prediction <- data.frame(index=1:500,Baseline=pred_gbm,Advanced=pred_svm)
+write.csv(labels_prediction,'../output/labels_prediction.csv')
 ```
   
 ###Reference  
