@@ -3,7 +3,7 @@
 ########################################
 
 test <- function(gbm_model, dat_test){
-  
+  library('gbm')
   ### Input: 
   ###  - the fitted classification model using training data
   ###  - processed features from testing images 

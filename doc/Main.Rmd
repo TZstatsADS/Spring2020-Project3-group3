@@ -56,7 +56,7 @@ library(LncFinder)
 ### Step 0 set work directories  
 ```{r wkdir, eval=FALSE}
 set.seed(0)
-setwd("~/Documents/Columbia/GR5243/Spring2020-Project3-ads-spring2020-project3-group3/doc")
+setwd("~/Spring2020-Project3-ads-spring2020-project3-group3/doc")
 # here replace it with your own path or manually set it in RStudio to where this rmd file is located. 
 # use relative path for reproducibility
 ```
@@ -237,7 +237,7 @@ save(fit_train, file="../output/fit_train.RData")
 tm_test=NA
 if(run.test){
   load(file="../output/fit_train.RData")
-  tm_test <- system.time(pred <- test(fit_train, dat_test))
+  tm_test <- system.time(pred_gbm <- test(fit_train, dat_test))
 }
 ```
   
@@ -362,7 +362,7 @@ saveRDS(fit_train_svm, "../output/fit_train_svm.RDS")
 fit_train_svm<-readRDS("../output/fit_train_svm.RDS")
 # Testing 
 tm_test_svm=NA
-tm_test_svm <- system.time(pred <- svm_test(fit_train_svm, dat_test))
+tm_test_svm <- system.time(pred_svm <- svm_test(fit_train_svm, dat_test))
 # Evaluation
 accu_svm <- mean(dat_test$emotion_idx == pred)
 confusionMatrix(pred, dat_test$emotion_idx)
@@ -376,6 +376,10 @@ cat("Time for constructing training improved model features=", tm_feature_train_
 cat("Time for constructing testing improved model features=", tm_feature_test_improved[1], "s \n")
 cat("Time for training improved model=", tm_train_svm[1], "s \n")
 cat("Time for testing improved model=", tm_test_svm[1], "s \n")
+```
+
+```{r}
+data.frame(index=1:500,Baseline=pred_gbm,Advanced=pred_svm)
 ```
   
 ###Reference  
