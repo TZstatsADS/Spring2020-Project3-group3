@@ -1,7 +1,8 @@
 ---
 title: "Main"
-author: "Ran (Rena) Lu"
+author: "Group 3"
 output:
+  pdf_document: default
   html_document:
     df_print: paged
 ---
@@ -247,9 +248,9 @@ if(run.test){
   
 * evaluation  
 ```{r}
+pred <- factor(pred_gbm)
 accu <- mean(dat_test$emotion_idx == pred)
 cat("The accuracy of model:", model_labels[which.min(err_cv[,1])], "is", accu*100, "%.\n")
-pred <- factor(pred)
 library(caret)
 confusionMatrix(pred, dat_test$emotion_idx)
 ```
@@ -277,7 +278,7 @@ In this chunk, we have a set of controls for the evaluation experiments.
 + (T/F) run evaluation on an independent test set  
 + (T/F) process features for test set  
   
-```{r exp_setup}
+```{r exp_setup_2}
 run.cv=TRUE # run cross-validation on the training set
 K <- 5  # number of CV folds
 run.feature.train=TRUE # process features for training set
@@ -286,7 +287,7 @@ run.feature.test=TRUE # process features for test set
 ```
 Using cross-validation, we compare the performance of models with different specifications. In this Code, we tune parameter k (number of stumps) for Boosted Decision Machine.  
   
-```{r model_setup}
+```{r model_setup_2}
 l = c(50,100,150,200,250,300) # change the labels
 model_labels_improved = paste("Boosted Decision Machine with number of trees K =", l)  # change the labels
 ```
@@ -303,7 +304,7 @@ Feature extraction is the same as Baseline model, and PCA is used for feature se
   + Input: train/test data  
   + Output: an RData file that contains extracted features and corresponding responses  
   
-```{r feature}
+```{r feature_2}
 source("../lib/feature_improved.R") # change file name
 
 dat_test_improved <- dat_test[,-ncol(dat_test)]
@@ -324,7 +325,7 @@ save(dat_test_improved, file="../output/feature_test_improved.RData")
 ```
   
 ### Step 4: Train a classification model with training features and responses  
-```{r loadlib}
+```{r loadlib_2}
 source("../lib/train_svm.R")
 source("../lib/test_svm.R")
 source("../lib/cross_validation_svm.R")
@@ -380,7 +381,7 @@ cat("The accuracy of model: cost =", cost[which.min(err_svm[,1])], "is", accu_sv
   
 ### Summarize Running Time  
 Prediction performance matters, so does the running times for constructing features and for training the model, especially when the computation resource is limited.  
-```{r running_time}
+```{r running_time_2}
 cat("Time for constructing training improved model features=", tm_feature_train_improved[1], "s \n")
 cat("Time for constructing testing improved model features=", tm_feature_test_improved[1], "s \n")
 cat("Time for training improved model=", tm_train_svm[1], "s \n")
@@ -395,14 +396,14 @@ write.csv(labels_prediction,'../output/labels_prediction.csv')
 
 ### Appendix-- Additional Models Tried
 #### Random Forest
-```{r loadlib}
+```{r loadlib_3, eval=FALSE, include=FALSE}
 # source("../lib/train_rf.R")
 # source("../lib/test_rf.R")
 # source("../lib/cross_validation_rf.R")
 ```
 
 ##### Model selection with cross-validation
-```{r runcv, eval=F}
+```{r runcv_3, eval=FALSE, include=FALSE}
 # para = c(250,500,750,1000,1250)
 # model_rf = paste("Random Forest with number of trees =", para)
 # if(run.cv){
@@ -416,7 +417,7 @@ write.csv(labels_prediction,'../output/labels_prediction.csv')
 ```
 
 Visualize cross-validation results. 
-```{r cv_vis}
+```{r cv_vis_3, eval=FALSE, include=FALSE}
 # if(run.cv){
 #   load("../output/err_rf.RData")
 #   err_rf <- as.data.frame(err_rf) 
@@ -430,7 +431,7 @@ Visualize cross-validation results.
 # }
 ```
 
-```{r best_model}
+```{r best_model_2, eval=FALSE, include=FALSE}
 # 
 # if(run.cv){
 #   model_best <- para[which.min(err_rf[,1])]
@@ -444,7 +445,7 @@ Visualize cross-validation results.
 # save(fit_train_rf, file="../output/fit_train_rf.RData")
 ```
 
-```{r test}
+```{r test_3, eval=FALSE, include=FALSE}
 # ##Testing
 # tm_test=NA
 # if(run.test){
@@ -457,7 +458,7 @@ Visualize cross-validation results.
 ```
 
 #### CNN
-```{r}
+```{r eval=FALSE, include=FALSE}
 # library(devtools)
 # library(keras)
 # library(tensorflow)
