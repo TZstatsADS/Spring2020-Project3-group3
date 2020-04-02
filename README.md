@@ -23,7 +23,7 @@ We developed advanced classification models to compare their accuracy and effici
 +**Contribution statement**:  All team members contributed equally in all stages of this project. 
 
 	+ Jinxiao Du wrote out the code for CNN model in Python, and converted it into R.
-	+ Tram  Duong wrote the code for SVM and Random Forest.
+	+ Tram  Duong wrote the code for SVM and Random Forest, and conducted cross validation for both models. 
 	+ Ziyun Liu and Kexin Su collaboratively wrote the code for KNN, and Ziyun also conducted feature selection for advanced model using PCA.
 	+ Ran Lu wrote the code for the complete baseline model.
 	+ Kexin Su worked on the code for KNN with Ziyun Liu, merged all the models into the main R markdown file, wrote the code for the label_prediction.csv, and write up the README file.
