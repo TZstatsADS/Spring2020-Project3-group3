@@ -330,14 +330,14 @@ source("../lib/cross_validation_svm.R")
 ```
 
 ``` {r svm run.cv, eval=FALSE}
-#SVM Cross-validation
-cost=seq(0.01, 0.1, length=10)
-err_svm <- matrix(0, nrow = length(cost), ncol = 2)
-for(i in 1:length(cost)){
-    cat("cost=", cost[i], "\n")
-    err_svm[i,] <- svm_cv(dat_train, K=5, cost[i])
-    save(err_svm, file="../output/err_svm.RData")
-  }
+##SVM Cross-validation
+#cost=seq(0.01, 0.1, length=10)
+#err_svm <- matrix(0, nrow = length(cost), ncol = 2)
+#for(i in 1:length(cost)){
+#    cat("cost=", cost[i], "\n")
+#    err_svm[i,] <- svm_cv(dat_train, K=5, cost[i])
+#    save(err_svm, file="../output/err_svm.RData")
+#  }
 
 ```
 
